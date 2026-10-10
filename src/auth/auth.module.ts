@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { UsersModule } from '../users/users.module.js';
 import { HouseholdModule } from '../household/household.module.js';
+import { MailModule } from '../mail/mail.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { HouseholdModule } from '../household/household.module.js';
     }),
     UsersModule,
     HouseholdModule,
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [

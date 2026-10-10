@@ -7,6 +7,8 @@ import type { AuthUser } from './decorators/current-user.decorator.js';
 export interface JwtPayload {
   sub: string;
   username: string;
+  /** Absent on tokens issued before email confirmation existed */
+  verified?: boolean;
 }
 
 @Injectable()
@@ -20,6 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload): AuthUser {
-    return { id: payload.sub, username: payload.username };
+    return {
+      id: payload.sub,
+      username: payload.username,
+      emailVerified: payload.verified ?? true,
+    };
   }
 }

@@ -23,6 +23,14 @@ export const envValidationSchema = Joi.object({
   // Where uploaded images are stored on disk
   UPLOAD_DIR: Joi.string().default('./uploads'),
 
+  // Outgoing mail (confirmation codes). Defaults match Mailpit in docker-compose.yml.
+  SMTP_HOST: Joi.string().default('localhost'),
+  SMTP_PORT: Joi.number().port().default(1025),
+  SMTP_SECURE: Joi.boolean().default(false),
+  SMTP_USER: Joi.string().allow('').optional(),
+  SMTP_PASSWORD: Joi.string().allow('').optional(),
+  MAIL_FROM: Joi.string().default('coloc <no-reply@coloc.local>'),
+
   // Frontend base URL, used to build shareable invite links
   APP_URL: Joi.string().uri().default('http://localhost:5173'),
 });

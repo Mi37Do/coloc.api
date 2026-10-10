@@ -7,12 +7,14 @@ import {
   CurrentUser,
   type AuthUser,
 } from '../auth/decorators/current-user.decorator.js';
+import { AllowUnverified } from '../auth/decorators/allow-unverified.decorator.js';
 
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @AllowUnverified()
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.usersService.findById(user.id);
@@ -23,6 +25,7 @@ export class UsersController {
     return this.usersService.update(user.id, dto);
   }
 
+  @AllowUnverified()
   @Delete('me')
   remove(@CurrentUser() user: AuthUser) {
     return this.usersService.remove(user.id);

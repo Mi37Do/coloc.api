@@ -24,9 +24,46 @@ export class UsersService {
     const email = dto.email.toLowerCase();
     await this.assertAvailable(email, dto.username);
     const user = await this.users.save(
-      this.users.create({ ...dto, email, passwordHash }),
+      this.users.create({ ...dto, email, passwordHash, emailVerified: false }),
     );
     return this.findById(user.id);
+  }
+
+  /** Loads the hidden verification columns. */
+  findForVerification(id: string): Promise<User | null> {
+    return this.users
+      .createQueryBuilder('user')
+      .addSelect([
+        'user.verificationCodeHash',
+        'user.verificationCodeExpiresAt',
+        'user.verificationCodeSentAt',
+        'user.verificationAttempts',
+      ])
+      .where('user.id = :id', { id })
+      .getOne();
+  }
+
+  async setVerificationCode(id: string, codeHash: string, expiresAt: Date) {
+    await this.users.update(id, {
+      verificationCodeHash: codeHash,
+      verificationCodeExpiresAt: expiresAt,
+      verificationCodeSentAt: new Date(),
+      verificationAttempts: 0,
+    });
+  }
+
+  async countFailedVerification(id: string) {
+    await this.users.increment({ id }, 'verificationAttempts', 1);
+  }
+
+  async markEmailVerified(id: string): Promise<User> {
+    await this.users.update(id, {
+      emailVerified: true,
+      verificationCodeHash: null,
+      verificationCodeExpiresAt: null,
+      verificationAttempts: 0,
+    });
+    return this.findById(id);
   }
 
   async findById(id: string): Promise<User> {

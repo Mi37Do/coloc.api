@@ -21,6 +21,20 @@ import {
 export class InvitesController {
   constructor(private readonly invitesService: InvitesService) {}
 
+  /** Join by short code, typed in the app: "K7Q-M2X", dash optional */
+  @Public()
+  @Get('code/:code')
+  previewByCode(@Param('code') code: string) {
+    return this.invitesService.previewByCode(code);
+  }
+
+  @ApiBearerAuth()
+  @Post('code/:code/accept')
+  @HttpCode(200)
+  acceptByCode(@Param('code') code: string, @CurrentUser() user: AuthUser) {
+    return this.invitesService.acceptByCode(code, user.id);
+  }
+
   @Public()
   @Get(':token')
   preview(@Param('token') token: string) {

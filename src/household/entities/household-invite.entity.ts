@@ -21,6 +21,14 @@ export class HouseholdInvite {
   @Column({ type: 'varchar', length: 64 })
   token: string;
 
+  /**
+   * Short code to type in instead of opening the link, e.g. K7QM2X (shown as
+   * K7Q-M2X). Stored without the dash. null on invites made before codes existed.
+   */
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 6, nullable: true })
+  code: string | null;
+
   @Column({ type: 'uuid' })
   householdId: string;
 

@@ -52,9 +52,11 @@ export class RealtimeGateway implements OnGatewayConnection {
       if (!token) throw new Error('missing token');
 
       const payload = await this.jwt.verifyAsync<JwtPayload>(token);
+      if (payload.verified === false) throw new Error('email not verified');
       (client.data as SocketData).user = {
         id: payload.sub,
         username: payload.username,
+        emailVerified: true,
       };
       await client.join(userRoom(payload.sub));
     } catch (err) {
