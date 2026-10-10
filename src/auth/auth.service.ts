@@ -108,7 +108,11 @@ export class AuthService {
   }
 
   private async sendCode(user: User) {
-    const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
+    // Fixed code outside production so signup works without a working mailbox.
+    const code =
+      process.env.NODE_ENV === 'production'
+        ? randomInt(0, 1_000_000).toString().padStart(6, '0')
+        : '123456';
     await this.usersService.setVerificationCode(
       user.id,
       hashCode(code),
