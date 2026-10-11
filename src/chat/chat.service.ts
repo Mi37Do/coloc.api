@@ -12,16 +12,22 @@ import {
 } from './entities/conversation.entity.js';
 import { ConversationMember } from './entities/conversation-member.entity.js';
 import { Message } from './entities/message.entity.js';
-import { ListMessagesDto } from './dto/chat.dto.js';
+import { ListMessagesDto, SendMessageDto } from './dto/chat.dto.js';
 import { HouseholdService } from '../household/household.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { MediaService } from '../media/media.service.js';
 import {
   HouseholdMember,
   MembershipStatus,
 } from '../household/entities/household-member.entity.js';
 
 const GROUP_KEY = 'group';
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+};
 
 /**
  * Socket events pushed to clients:
@@ -41,6 +47,7 @@ export class ChatService {
     private readonly messages: Repository<Message>,
     private readonly householdService: HouseholdService,
     private readonly realtime: RealtimeGateway,
+    private readonly mediaService: MediaService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -149,16 +156,26 @@ export class ChatService {
     householdId: string,
     conversationId: string,
     userId: string,
-    body: string,
+    { body = '', gifId }: SendMessageDto,
   ) {
+    body = body.trim();
+    if (!body && !gifId) {
+      throw new BadRequestException('Send some text or a GIF');
+    }
     const conversation = await this.findAccessible(
       conversationId,
       userId,
       householdId,
     );
+    if (gifId) await this.mediaService.assertLibraryGif(householdId, gifId);
     const saved = await this.dataSource.transaction(async (em) => {
       const message = await em.save(
-        em.create(Message, { conversationId, senderId: userId, body }),
+        em.create(Message, {
+          conversationId,
+          senderId: userId,
+          body,
+          gifId: gifId ?? null,
+        }),
       );
       await em.update(Conversation, conversationId, {
         lastMessageAt: message.createdAt,
@@ -215,6 +232,7 @@ export class ChatService {
       userId,
     );
     message.body = '';
+    message.gifId = null;
     message.deletedAt = new Date();
     await this.messages.save(message);
     this.realtime.emitToUsers(

@@ -17,9 +17,17 @@ import {
   HouseholdRole,
 } from '../household/entities/household-member.entity.js';
 
-export type MediaOwner = { choreId: string } | { eventId: string };
+export type MediaOwner =
+  | { choreId: string }
+  | { eventId: string }
+  | { householdId: string; libraryGif: true };
 
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+};
 
 @Injectable()
 export class MediaService {
@@ -36,6 +44,8 @@ export class MediaService {
     owner: MediaOwner,
     uploadedById: string,
     files: Express.Multer.File[] | undefined,
+    /** Restrict to these MIME types, e.g. only GIFs for the GIF library */
+    only?: string[],
   ) {
     if (!files?.length) {
       throw new BadRequestException('Send at least one image in "files"');
@@ -46,6 +56,9 @@ export class MediaService {
         throw new BadRequestException(
           `${file.originalname} is not a supported image (jpeg, png, webp, gif, heic)`,
         );
+      }
+      if (only && !only.includes(type.mime)) {
+        throw new BadRequestException(`${file.originalname} is not a GIF`);
       }
       return {
         file,
@@ -73,7 +86,10 @@ export class MediaService {
           }),
         ),
       );
-      return this.list(owner, rows.map((r) => r.id));
+      return this.list(
+        owner,
+        rows.map((r) => r.id),
+      );
     } catch (err) {
       await Promise.all(saved.map((key) => this.storage.delete(key)));
       throw err;
@@ -87,6 +103,24 @@ export class MediaService {
       select: { uploadedBy: PUBLIC_USER },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  /** The household's shared GIF library, newest first */
+  listLibraryGifs(householdId: string) {
+    return this.media.find({
+      where: { householdId, libraryGif: true },
+      relations: { uploadedBy: true },
+      select: { uploadedBy: PUBLIC_USER },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /** Throws unless mediaId is a GIF in this household's library */
+  async assertLibraryGif(householdId: string, mediaId: string) {
+    const found = await this.media.exists({
+      where: { id: mediaId, householdId, libraryGif: true },
+    });
+    if (!found) throw new NotFoundException('GIF not found');
   }
 
   /** Streams the file if the viewer is allowed to see it */
@@ -103,7 +137,9 @@ export class MediaService {
   async remove(householdId: string, mediaId: string, me: HouseholdMember) {
     const media = await this.findVisible(householdId, mediaId, me.userId);
     if (me.role !== HouseholdRole.ADMIN && media.uploadedById !== me.userId) {
-      throw new ForbiddenException('Only the uploader or an admin can delete this');
+      throw new ForbiddenException(
+        'Only the uploader or an admin can delete this',
+      );
     }
     await this.media.delete(media.id);
     await this.storage.delete(media.storageKey);

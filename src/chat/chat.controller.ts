@@ -13,7 +13,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ChatService } from './chat.service.js';
-import { ListMessagesDto, SendMessageDto, StartDirectDto } from './dto/chat.dto.js';
+import {
+  EditMessageDto,
+  ListMessagesDto,
+  SendMessageDto,
+  StartDirectDto,
+} from './dto/chat.dto.js';
 import {
   HouseholdMemberGuard,
   Membership,
@@ -52,7 +57,12 @@ export class ChatController {
     @Membership() me: HouseholdMember,
     @Query() query: ListMessagesDto,
   ) {
-    return this.chatService.listMessages(householdId, conversationId, me.userId, query);
+    return this.chatService.listMessages(
+      householdId,
+      conversationId,
+      me.userId,
+      query,
+    );
   }
 
   @Post(':conversationId/messages')
@@ -60,9 +70,9 @@ export class ChatController {
     @Param('householdId') householdId: string,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
     @Membership() me: HouseholdMember,
-    @Body() { body }: SendMessageDto,
+    @Body() dto: SendMessageDto,
   ) {
-    return this.chatService.send(householdId, conversationId, me.userId, body);
+    return this.chatService.send(householdId, conversationId, me.userId, dto);
   }
 
   @Patch(':conversationId/messages/:messageId')
@@ -71,9 +81,15 @@ export class ChatController {
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
     @Param('messageId', ParseUUIDPipe) messageId: string,
     @Membership() me: HouseholdMember,
-    @Body() { body }: SendMessageDto,
+    @Body() { body }: EditMessageDto,
   ) {
-    return this.chatService.edit(householdId, conversationId, messageId, me.userId, body);
+    return this.chatService.edit(
+      householdId,
+      conversationId,
+      messageId,
+      me.userId,
+      body,
+    );
   }
 
   @Delete(':conversationId/messages/:messageId')
@@ -84,7 +100,12 @@ export class ChatController {
     @Param('messageId', ParseUUIDPipe) messageId: string,
     @Membership() me: HouseholdMember,
   ) {
-    return this.chatService.remove(householdId, conversationId, messageId, me.userId);
+    return this.chatService.remove(
+      householdId,
+      conversationId,
+      messageId,
+      me.userId,
+    );
   }
 
   @Post(':conversationId/read')

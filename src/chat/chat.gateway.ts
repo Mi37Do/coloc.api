@@ -25,10 +25,16 @@ export class ChatGateway {
   ) {
     const user = (client.data as SocketData).user;
     const conversationId = body?.conversationId;
-    if (!user || typeof conversationId !== 'string' || !isUUID(conversationId)) {
+    if (
+      !user ||
+      typeof conversationId !== 'string' ||
+      !isUUID(conversationId)
+    ) {
       return;
     }
     // Silently ignore conversations the user can't access
-    await this.chatService.typing(conversationId, user.id).catch(() => undefined);
+    await this.chatService
+      .typing(conversationId, user.id)
+      .catch(() => undefined);
   }
 }

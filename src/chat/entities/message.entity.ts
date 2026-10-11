@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Conversation } from './conversation.entity.js';
 import { User } from '../../users/entities/user.entity.js';
+import { Media } from '../../media/entities/media.entity.js';
 
 @Entity('messages')
 @Index(['conversationId', 'createdAt'])
@@ -34,6 +35,14 @@ export class Message {
   /** Emptied when the message is deleted; the row stays as a placeholder */
   @Column({ type: 'text' })
   body: string;
+
+  /** A GIF from the household library; cleared when the GIF is removed from it */
+  @Column({ type: 'uuid', nullable: true })
+  gifId: string | null;
+
+  @ManyToOne(() => Media, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'gifId' })
+  gif: Relation<Media> | null;
 
   @Column({ type: 'timestamptz', nullable: true })
   editedAt: Date | null;

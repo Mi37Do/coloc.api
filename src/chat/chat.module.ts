@@ -7,12 +7,14 @@ import { Conversation } from './entities/conversation.entity.js';
 import { ConversationMember } from './entities/conversation-member.entity.js';
 import { Message } from './entities/message.entity.js';
 import { HouseholdModule } from '../household/household.module.js';
+import { MediaModule } from '../media/media.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Conversation, ConversationMember, Message]),
     // Also brings NotificationsModule → RealtimeGateway
     HouseholdModule,
+    MediaModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],

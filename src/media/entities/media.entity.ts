@@ -14,9 +14,14 @@ import { User } from '../../users/entities/user.entity.js';
 import { Chore } from '../../chores/entities/chore.entity.js';
 import { HouseholdEvent } from '../../events/entities/event.entity.js';
 
-/** An uploaded image, attached to exactly one chore or one event */
+/**
+ * An uploaded image with exactly one owner: a chore, an event, or the household's
+ * shared GIF library (used in chat).
+ */
 @Entity('media')
-@Check(`("choreId" IS NULL) <> ("eventId" IS NULL)`)
+@Check(
+  `(("choreId" IS NOT NULL)::int + ("eventId" IS NOT NULL)::int + "libraryGif"::int) = 1`,
+)
 export class Media {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,6 +36,10 @@ export class Media {
   @Index()
   @Column({ type: 'uuid', nullable: true })
   choreId: string | null;
+
+  /** Part of the household's GIF library, which every member can send in chat */
+  @Column({ type: 'boolean', default: false })
+  libraryGif: boolean;
 
   @ManyToOne(() => Chore, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'choreId' })

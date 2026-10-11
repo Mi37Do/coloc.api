@@ -30,9 +30,7 @@ export const ImageUpload = () =>
  * Detects the real image type from the file's first bytes; the client's
  * Content-Type and file extension can't be trusted.
  */
-export function sniffImage(
-  buf: Buffer,
-): { mime: string; ext: string } | null {
+export function sniffImage(buf: Buffer): { mime: string; ext: string } | null {
   const ascii = (start: number, end: number) =>
     buf.subarray(start, end).toString('latin1');
 

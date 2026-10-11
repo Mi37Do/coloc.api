@@ -16,7 +16,20 @@ export class StartDirectDto {
   userId: string;
 }
 
+/** Text, a GIF from the household library, or both */
 export class SendMessageDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  body?: string;
+
+  @IsOptional()
+  @IsUUID()
+  gifId?: string;
+}
+
+/** Only the text can be edited */
+export class EditMessageDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(4000)
