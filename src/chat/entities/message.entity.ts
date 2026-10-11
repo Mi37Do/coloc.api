@@ -36,6 +36,14 @@ export class Message {
   @Column({ type: 'text' })
   body: string;
 
+  /** A photo sent in this chat (media owned by the conversation) */
+  @Column({ type: 'uuid', nullable: true })
+  imageId: string | null;
+
+  @ManyToOne(() => Media, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'imageId' })
+  image: Relation<Media> | null;
+
   /** A GIF from the household library; cleared when the GIF is removed from it */
   @Column({ type: 'uuid', nullable: true })
   gifId: string | null;

@@ -9,8 +9,11 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFiles,
   UseGuards,
+  Header,
 } from '@nestjs/common';
+import { ImageUpload } from '../media/image-upload.js';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ChatService } from './chat.service.js';
 import {
@@ -104,6 +107,39 @@ export class ChatController {
       householdId,
       conversationId,
       messageId,
+      me.userId,
+    );
+  }
+
+  /** Up to 10 photos (10 MB each) in the multipart field `files`; then send messages with imageId */
+  @Post(':conversationId/images')
+  @ImageUpload()
+  uploadImages(
+    @Param('householdId') householdId: string,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Membership() me: HouseholdMember,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.chatService.uploadImages(
+      householdId,
+      conversationId,
+      me.userId,
+      files,
+    );
+  }
+
+  @Get(':conversationId/images/:mediaId/file')
+  @Header('Cache-Control', 'private, max-age=86400')
+  image(
+    @Param('householdId') householdId: string,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Param('mediaId', ParseUUIDPipe) mediaId: string,
+    @Membership() me: HouseholdMember,
+  ) {
+    return this.chatService.openImage(
+      householdId,
+      conversationId,
+      mediaId,
       me.userId,
     );
   }

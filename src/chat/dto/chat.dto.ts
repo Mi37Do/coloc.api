@@ -16,7 +16,7 @@ export class StartDirectDto {
   userId: string;
 }
 
-/** Text, a GIF from the household library, or both */
+/** Text, a GIF from the household library, a photo uploaded to this chat, or a mix */
 export class SendMessageDto {
   @IsOptional()
   @IsString()
@@ -26,6 +26,11 @@ export class SendMessageDto {
   @IsOptional()
   @IsUUID()
   gifId?: string;
+
+  /** From POST /households/:householdId/conversations/:conversationId/images */
+  @IsOptional()
+  @IsUUID()
+  imageId?: string;
 }
 
 /** Only the text can be edited */

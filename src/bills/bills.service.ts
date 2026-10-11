@@ -18,7 +18,13 @@ import {
   HouseholdRole,
 } from '../household/entities/household-member.entity.js';
 
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+  avatarUpdatedAt: true,
+};
 
 export interface Debt {
   fromUserId: string;

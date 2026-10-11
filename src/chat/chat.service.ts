@@ -27,6 +27,7 @@ const PUBLIC_USER = {
   username: true,
   firstname: true,
   lastname: true,
+  avatarUpdatedAt: true,
 };
 
 /**
@@ -156,11 +157,11 @@ export class ChatService {
     householdId: string,
     conversationId: string,
     userId: string,
-    { body = '', gifId }: SendMessageDto,
+    { body = '', gifId, imageId }: SendMessageDto,
   ) {
     body = body.trim();
-    if (!body && !gifId) {
-      throw new BadRequestException('Send some text or a GIF');
+    if (!body && !gifId && !imageId) {
+      throw new BadRequestException('Send some text, a GIF or a photo');
     }
     const conversation = await this.findAccessible(
       conversationId,
@@ -168,6 +169,9 @@ export class ChatService {
       householdId,
     );
     if (gifId) await this.mediaService.assertLibraryGif(householdId, gifId);
+    if (imageId) {
+      await this.mediaService.assertConversationImage(conversationId, imageId);
+    }
     const saved = await this.dataSource.transaction(async (em) => {
       const message = await em.save(
         em.create(Message, {
@@ -175,6 +179,7 @@ export class ChatService {
           senderId: userId,
           body,
           gifId: gifId ?? null,
+          imageId: imageId ?? null,
         }),
       );
       await em.update(Conversation, conversationId, {
@@ -233,6 +238,7 @@ export class ChatService {
     );
     message.body = '';
     message.gifId = null;
+    message.imageId = null;
     message.deletedAt = new Date();
     await this.messages.save(message);
     this.realtime.emitToUsers(
@@ -240,6 +246,33 @@ export class ChatService {
       'chat:message:updated',
       message,
     );
+  }
+
+  /** Photos for a message: upload first, then send a message with the returned id as imageId */
+  async uploadImages(
+    householdId: string,
+    conversationId: string,
+    userId: string,
+    files: Express.Multer.File[] | undefined,
+  ) {
+    await this.findAccessible(conversationId, userId, householdId);
+    return this.mediaService.upload(
+      householdId,
+      { conversationId },
+      userId,
+      files,
+    );
+  }
+
+  /** Streams a chat photo to someone who is in that chat */
+  async openImage(
+    householdId: string,
+    conversationId: string,
+    mediaId: string,
+    userId: string,
+  ) {
+    await this.findAccessible(conversationId, userId, householdId);
+    return this.mediaService.openConversationImage(conversationId, mediaId);
   }
 
   async markRead(householdId: string, conversationId: string, userId: string) {

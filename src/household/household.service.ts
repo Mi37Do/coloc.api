@@ -24,6 +24,7 @@ const PUBLIC_USER_FIELDS = {
   username: true,
   firstname: true,
   lastname: true,
+  avatarUpdatedAt: true,
 } as const;
 
 @Injectable()

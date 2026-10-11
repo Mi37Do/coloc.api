@@ -12,7 +12,13 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 import { NotificationType } from '../notifications/entities/notification.entity.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+  avatarUpdatedAt: true,
+};
 
 /** Anti-spam: one member can't fire more than this many alerts per window */
 const MAX_ALERTS_PER_WINDOW = 3;

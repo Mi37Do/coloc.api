@@ -14,7 +14,13 @@ import { MediaService } from '../media/media.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { NotificationType } from '../notifications/entities/notification.entity.js';
 
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+  avatarUpdatedAt: true,
+};
 
 @Injectable()
 export class ChoresService {

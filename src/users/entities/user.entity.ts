@@ -51,6 +51,17 @@ export class User {
   @Column({ type: 'int', default: 0, select: false })
   verificationAttempts: number;
 
+  /** Profile picture in storage; never exposed to clients */
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  avatarKey: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, select: false })
+  avatarMime: string | null;
+
+  /** Set when the user has a profile picture; clients use it to cache-bust /users/:id/avatar */
+  @Column({ type: 'timestamptz', nullable: true })
+  avatarUpdatedAt: Date | null;
+
   @Column({ type: 'int' })
   countryId: number;
 

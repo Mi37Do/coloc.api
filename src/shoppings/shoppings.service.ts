@@ -10,7 +10,13 @@ import {
   UpdateShoppingListDto,
 } from './dto/shopping.dto.js';
 
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+  avatarUpdatedAt: true,
+};
 
 @Injectable()
 export class ShoppingsService {

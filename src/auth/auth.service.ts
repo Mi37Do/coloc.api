@@ -146,6 +146,7 @@ export class AuthService {
         lastname: user.lastname,
         email: user.email,
         emailVerified: user.emailVerified,
+        avatarUpdatedAt: user.avatarUpdatedAt ?? null,
       },
       joinedHouseholdId: membership?.householdId,
     };

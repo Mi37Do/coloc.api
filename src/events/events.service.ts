@@ -19,7 +19,13 @@ import { MediaService } from '../media/media.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { NotificationType } from '../notifications/entities/notification.entity.js';
 
-const PUBLIC_USER = { id: true, username: true, firstname: true, lastname: true };
+const PUBLIC_USER = {
+  id: true,
+  username: true,
+  firstname: true,
+  lastname: true,
+  avatarUpdatedAt: true,
+};
 
 /**
  * Every read takes the viewer's id: members excluded from an event get a
@@ -89,11 +95,11 @@ export class EventsService {
     const event = await this.events
       .createQueryBuilder('event')
       .leftJoin('event.createdBy', 'createdBy')
-      .addSelect(['createdBy.id', 'createdBy.username', 'createdBy.firstname', 'createdBy.lastname'])
+      .addSelect(['createdBy.id', 'createdBy.username', 'createdBy.firstname', 'createdBy.lastname', 'createdBy.avatarUpdatedAt'])
       .leftJoin('event.participants', 'participant')
       .addSelect(['participant.id', 'participant.userId', 'participant.response', 'participant.respondedAt'])
       .leftJoin('participant.user', 'participantUser')
-      .addSelect(['participantUser.id', 'participantUser.username', 'participantUser.firstname', 'participantUser.lastname'])
+      .addSelect(['participantUser.id', 'participantUser.username', 'participantUser.firstname', 'participantUser.lastname', 'participantUser.avatarUpdatedAt'])
       .leftJoinAndSelect('event.exclusions', 'exclusion')
       .where('event.id = :id AND event.householdId = :householdId', { id, householdId })
       .andWhere(visibleTo('event', ':viewerId'), { viewerId })

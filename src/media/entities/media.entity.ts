@@ -13,14 +13,15 @@ import { Household } from '../../household/entities/household.entity.js';
 import { User } from '../../users/entities/user.entity.js';
 import { Chore } from '../../chores/entities/chore.entity.js';
 import { HouseholdEvent } from '../../events/entities/event.entity.js';
+import { Conversation } from '../../chat/entities/conversation.entity.js';
 
 /**
- * An uploaded image with exactly one owner: a chore, an event, or the household's
- * shared GIF library (used in chat).
+ * An uploaded image with exactly one owner: a chore, an event, a chat conversation
+ * (photos sent in chat), or the household's shared GIF library.
  */
 @Entity('media')
 @Check(
-  `(("choreId" IS NOT NULL)::int + ("eventId" IS NOT NULL)::int + "libraryGif"::int) = 1`,
+  `(("choreId" IS NOT NULL)::int + ("eventId" IS NOT NULL)::int + ("conversationId" IS NOT NULL)::int + "libraryGif"::int) = 1`,
 )
 export class Media {
   @PrimaryGeneratedColumn('uuid')
@@ -36,6 +37,15 @@ export class Media {
   @Index()
   @Column({ type: 'uuid', nullable: true })
   choreId: string | null;
+
+  /** A photo sent in this chat; only its participants can open it */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  conversationId: string | null;
+
+  @ManyToOne(() => Conversation, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'conversationId' })
+  conversation: Relation<Conversation> | null;
 
   /** Part of the household's GIF library, which every member can send in chat */
   @Column({ type: 'boolean', default: false })

@@ -20,13 +20,15 @@ import {
 export type MediaOwner =
   | { choreId: string }
   | { eventId: string }
-  | { householdId: string; libraryGif: true };
+  | { householdId: string; libraryGif: true }
+  | { conversationId: string };
 
 const PUBLIC_USER = {
   id: true,
   username: true,
   firstname: true,
   lastname: true,
+  avatarUpdatedAt: true,
 };
 
 @Injectable()
@@ -115,6 +117,30 @@ export class MediaService {
     });
   }
 
+  /** Throws unless mediaId is a photo uploaded to this conversation */
+  async assertConversationImage(conversationId: string, mediaId: string) {
+    const found = await this.media.exists({
+      where: { id: mediaId, conversationId },
+    });
+    if (!found) throw new NotFoundException('Photo not found');
+  }
+
+  /** Streams a chat photo. The caller (ChatService) has already checked access to the conversation. */
+  async openConversationImage(conversationId: string, mediaId: string) {
+    const media = await this.media.findOne({
+      where: { id: mediaId, conversationId },
+      select: {
+        id: true,
+        storageKey: true,
+        mimeType: true,
+        size: true,
+        originalName: true,
+      },
+    });
+    if (!media) throw new NotFoundException('Photo not found');
+    return this.stream(media);
+  }
+
   /** Throws unless mediaId is a GIF in this household's library */
   async assertLibraryGif(householdId: string, mediaId: string) {
     const found = await this.media.exists({
@@ -126,6 +152,12 @@ export class MediaService {
   /** Streams the file if the viewer is allowed to see it */
   async open(householdId: string, mediaId: string, viewerId: string) {
     const media = await this.findVisible(householdId, mediaId, viewerId);
+    return this.stream(media);
+  }
+
+  private stream(
+    media: Pick<Media, 'storageKey' | 'mimeType' | 'size' | 'originalName'>,
+  ) {
     return new StreamableFile(this.storage.stream(media.storageKey), {
       type: media.mimeType,
       length: media.size,
@@ -166,6 +198,7 @@ export class MediaService {
       select: {
         id: true,
         eventId: true,
+        conversationId: true,
         uploadedById: true,
         storageKey: true,
         mimeType: true,
@@ -178,7 +211,10 @@ export class MediaService {
       (await this.exclusions.exists({
         where: { eventId: media.eventId, userId: viewerId },
       }));
-    if (!media || hidden) throw new NotFoundException('Media not found');
+    // Chat photos are only served through the chat route, which checks the viewer is in that chat
+    if (!media || hidden || media.conversationId) {
+      throw new NotFoundException('Media not found');
+    }
     return media;
   }
 }

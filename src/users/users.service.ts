@@ -11,7 +11,7 @@ import { User } from './entities/user.entity.js';
 
 export type PublicUser = Pick<
   User,
-  'id' | 'username' | 'firstname' | 'lastname'
+  'id' | 'username' | 'firstname' | 'lastname' | 'avatarUpdatedAt'
 >;
 
 @Injectable()
@@ -88,7 +88,13 @@ export class UsersService {
     const escaped = term.replace(/[\\%_]/g, '\\$&');
     return this.users
       .find({
-        select: { id: true, username: true, firstname: true, lastname: true },
+        select: {
+          id: true,
+          username: true,
+          firstname: true,
+          lastname: true,
+          avatarUpdatedAt: true,
+        },
         where: [
           { email: term.toLowerCase() },
           { username: ILike(`${escaped}%`) },
