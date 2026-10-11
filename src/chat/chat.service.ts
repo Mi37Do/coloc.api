@@ -16,6 +16,8 @@ import { ListMessagesDto, SendMessageDto } from './dto/chat.dto.js';
 import { HouseholdService } from '../household/household.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 import { MediaService } from '../media/media.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { NotificationType } from '../notifications/entities/notification.entity.js';
 import {
   HouseholdMember,
   MembershipStatus,
@@ -49,6 +51,7 @@ export class ChatService {
     private readonly householdService: HouseholdService,
     private readonly realtime: RealtimeGateway,
     private readonly mediaService: MediaService,
+    private readonly notifications: NotificationsService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -197,6 +200,23 @@ export class ChatService {
     // Sender included, so their other devices update too
     const audience = await this.audience(conversation);
     this.realtime.emitToUsers(audience, 'chat:message', message);
+
+    const sender = message.sender?.firstname || message.sender?.username || 'Someone';
+    await this.notifications.notify(
+      audience.filter((id) => id !== userId),
+      {
+        type: NotificationType.MESSAGE,
+        title:
+          conversation.type === ConversationType.GROUP
+            ? `${sender} in the group chat`
+            : sender,
+        body: body || (gifId ? 'Sent a GIF' : 'Sent a photo'),
+        householdId,
+        data: { conversationId, messageId: message.id, url: `/chat/${conversationId}` },
+        store: false,
+        tag: `chat:${conversationId}`,
+      },
+    );
     return message;
   }
 

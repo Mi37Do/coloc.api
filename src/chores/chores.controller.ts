@@ -75,7 +75,7 @@ export class ChoresController {
   ) {
     const chore = await this.choresService.findOne(householdId, id);
     assertOwnerOrAdmin(me, chore.createdById);
-    return this.choresService.remove(householdId, id);
+    return this.choresService.remove(householdId, id, me.userId);
   }
 
   @Post(':id/complete')

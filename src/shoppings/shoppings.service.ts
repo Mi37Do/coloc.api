@@ -9,6 +9,8 @@ import {
   UpdateShoppingItemDto,
   UpdateShoppingListDto,
 } from './dto/shopping.dto.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { NotificationType } from '../notifications/entities/notification.entity.js';
 
 const PUBLIC_USER = {
   id: true,
@@ -25,6 +27,7 @@ export class ShoppingsService {
     private readonly lists: Repository<ShoppingList>,
     @InjectRepository(ShoppingItem)
     private readonly items: Repository<ShoppingItem>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // --- Lists ---
@@ -33,6 +36,7 @@ export class ShoppingsService {
     const list = await this.lists.save(
       this.lists.create({ ...dto, householdId, createdById: userId }),
     );
+    await this.notify(householdId, list.id, userId, 'started a shopping list', list.name);
     return this.findList(householdId, list.id);
   }
 
@@ -121,10 +125,11 @@ export class ShoppingsService {
     dto: CreateShoppingItemDto,
   ) {
     const list = await this.findList(householdId, listId);
-    await this.items.save(
+    const item = await this.items.save(
       this.items.create({ ...dto, listId: list.id, addedById: userId }),
     );
     await this.touch(list.id);
+    await this.notify(householdId, list.id, userId, `added to ${list.name}`, item.name);
     return this.findList(householdId, listId);
   }
 
@@ -153,6 +158,9 @@ export class ShoppingsService {
       checkedById: checked ? userId : null,
     });
     await this.touch(listId);
+    if (checked) {
+      await this.notify(householdId, listId, userId, 'bought', item.name);
+    }
     return this.findList(householdId, listId);
   }
 
@@ -160,6 +168,27 @@ export class ShoppingsService {
     const item = await this.findItem(householdId, listId, itemId);
     await this.items.delete(item.id);
     await this.touch(listId);
+  }
+
+  /** "Sara added to Groceries: milk" to every other member */
+  private async notify(
+    householdId: string,
+    listId: string,
+    actorId: string,
+    action: string,
+    body: string,
+  ) {
+    await this.notifications.notifyHousehold(
+      householdId,
+      {
+        type: NotificationType.SHOPPING_UPDATED,
+        title: `${await this.notifications.nameOf(actorId)} ${action}`,
+        body,
+        data: { listId, url: `/shopping/${listId}` },
+        tag: `shopping:${listId}`,
+      },
+      [actorId],
+    );
   }
 
   private async findItem(householdId: string, listId: string, itemId: string) {

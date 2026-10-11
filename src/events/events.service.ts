@@ -141,7 +141,18 @@ export class EventsService {
         await this.replaceExclusions(em, event.id, excludedUserIds);
       }
     });
-    return this.findOne(householdId, id, viewerId);
+    const updated = await this.findOne(householdId, id, viewerId);
+    await this.notifications.notifyHousehold(
+      householdId,
+      {
+        type: NotificationType.EVENT_UPDATED,
+        title: `${await this.notifications.nameOf(viewerId)} edited an event`,
+        body: updated.title,
+        data: { eventId: event.id, startsAt: updated.startsAt },
+      },
+      [viewerId, ...updated.excludedUserIds],
+    );
+    return updated;
   }
 
   async setCancelled(

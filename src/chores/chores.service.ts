@@ -43,6 +43,9 @@ export class ChoresService {
       this.chores.create({ ...dto, householdId, createdById: userId }),
     );
     await this.notifyAssignee(chore, userId);
+    await this.notifyHousehold(chore, userId, 'added a chore', [
+      ...(chore.assigneeId ? [chore.assigneeId] : []),
+    ]);
     return this.findOne(householdId, chore.id);
   }
 
@@ -97,16 +100,19 @@ export class ChoresService {
       ...(dto.dueAt !== undefined && { dueReminderSentAt: null }),
     });
     const updated = await this.findOne(householdId, id);
-    if (dto.assigneeId && dto.assigneeId !== chore.assigneeId) {
-      await this.notifyAssignee(updated, userId);
-    }
+    const reassigned = dto.assigneeId && dto.assigneeId !== chore.assigneeId;
+    if (reassigned) await this.notifyAssignee(updated, userId);
+    await this.notifyHousehold(updated, userId, 'edited a chore', [
+      ...(reassigned && updated.assigneeId ? [updated.assigneeId] : []),
+    ]);
     return updated;
   }
 
-  async remove(householdId: string, id: string) {
+  async remove(householdId: string, id: string, userId?: string) {
     const chore = await this.findOne(householdId, id);
     await this.mediaService.removeAllFor({ choreId: chore.id });
     await this.chores.delete(chore.id);
+    if (userId) await this.notifyHousehold(chore, userId, 'deleted a chore');
   }
 
   // --- Images (e.g. "before/after" or proof it's done) ---
@@ -158,6 +164,7 @@ export class ChoresService {
       );
     });
 
+    await this.notifyHousehold(chore, userId, 'finished a chore', [], NotificationType.CHORE_DONE);
     // With rotation, the next occurrence lands on someone new
     if (next && chore.rotateAssignee) await this.notifyAssignee(next, userId);
     return this.findOne(householdId, id);
@@ -171,6 +178,26 @@ export class ChoresService {
       completedById: null,
     });
     return this.findOne(householdId, id);
+  }
+
+  /** "Sara added a chore" to every other member */
+  private async notifyHousehold(
+    chore: Chore,
+    actorId: string,
+    action: string,
+    except: string[] = [],
+    type = NotificationType.CHORE_UPDATED,
+  ) {
+    await this.notifications.notifyHousehold(
+      chore.householdId,
+      {
+        type,
+        title: `${await this.notifications.nameOf(actorId)} ${action}`,
+        body: chore.title,
+        data: { choreId: chore.id, url: '/' },
+      },
+      [actorId, ...except],
+    );
   }
 
   /** Nobody gets notified about a chore they assigned to themselves */

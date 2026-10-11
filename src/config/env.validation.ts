@@ -31,6 +31,9 @@ export const envValidationSchema = Joi.object({
   SMTP_PASSWORD: Joi.string().allow('').optional(),
   MAIL_FROM: Joi.string().default('coloc <no-reply@coloc.local>'),
 
+  // Firebase service account JSON for native push (FCM). Unset: push is off.
+  FIREBASE_SERVICE_ACCOUNT_PATH: Joi.string().optional(),
+
   // Frontend base URL, used to build shareable invite links
   APP_URL: Joi.string().uri().default('http://localhost:5173'),
 });

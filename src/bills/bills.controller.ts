@@ -64,7 +64,7 @@ export class BillsController {
   ) {
     const bill = await this.billsService.findOne(householdId, id);
     assertOwnerOrAdmin(me, bill.createdById);
-    return this.billsService.update(householdId, id, dto);
+    return this.billsService.update(householdId, id, dto, me.userId);
   }
 
   @Delete(':id')
@@ -76,7 +76,7 @@ export class BillsController {
   ) {
     const bill = await this.billsService.findOne(householdId, id);
     assertOwnerOrAdmin(me, bill.createdById);
-    return this.billsService.remove(householdId, id);
+    return this.billsService.remove(householdId, id, me.userId);
   }
 
   @Post(':id/shares/:userId/settle')

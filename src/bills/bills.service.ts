@@ -112,17 +112,48 @@ export class BillsService {
     return bill;
   }
 
-  async update(householdId: string, id: string, dto: UpdateBillDto) {
+  async update(
+    householdId: string,
+    id: string,
+    dto: UpdateBillDto,
+    actorId?: string,
+  ) {
     const bill = await this.findOne(householdId, id);
     await this.bills.update(bill.id, {
       ...dto,
       ...(dto.dueDate !== undefined && { dueReminderSentAt: null }),
     });
-    return this.findOne(householdId, id);
+    const updated = await this.findOne(householdId, id);
+    if (actorId) {
+      await this.notifications.notifyHousehold(
+        householdId,
+        {
+          type: NotificationType.BILL_UPDATED,
+          title: `${await this.notifications.nameOf(actorId)} edited a bill`,
+          body: updated.title,
+          data: { billId: bill.id, url: '/bills' },
+        },
+        [actorId],
+      );
+    }
+    return updated;
   }
 
-  async remove(householdId: string, id: string) {
+  async remove(householdId: string, id: string, actorId?: string) {
+    const bill = await this.bills.findOne({ where: { id, householdId } });
     await this.bills.delete({ id, householdId });
+    if (bill && actorId) {
+      await this.notifications.notifyHousehold(
+        householdId,
+        {
+          type: NotificationType.BILL_UPDATED,
+          title: `${await this.notifications.nameOf(actorId)} deleted a bill`,
+          body: bill.title,
+          data: { url: '/bills' },
+        },
+        [actorId],
+      );
+    }
   }
 
   /** The debtor, the payer, or an admin can mark a share as paid back */
